@@ -3,30 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>マイ フォトギャラリー</title>
+    <title>マイ画像コレクター</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding: 20px; }
-        h1 { color: #333; }
+        body { font-family: sans-serif; background: #f0f2f5; text-align: center; padding: 20px; color: #333; }
+        .upload-area { background: white; max-width: 400px; margin: 20px auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input[type="file"] { margin-bottom: 10px; }
+        button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
         .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px; }
-        .gallery-item { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 300px; }
-        .gallery-item img { width: 100%; height: auto; border-radius: 4px; object-fit: cover; }
+        .gallery-item { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 250px; position: relative; }
+        .gallery-item img { width: 100%; height: auto; border-radius: 4px; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-    <h1>My Photo Gallery</h1>
-    <p>お気に入りの画像コレクション</p>
+    <h1>My Image Collector</h1>
+    <p>自分で画像をアップロードして保存できる場所</p>
 
-    <div class="gallery">
-        <!-- 💡 あなたがアップロードした画像のファイル名に書き換えてください -->
-        <div class="gallery-item">
-            <img src="photo1.jpg" alt="画像1">
-        </div>
-        <div class="gallery-item">
-            <img src="photo2.jpg" alt="画像2">
-        </div>
-        <!-- 画像を増やしたい場合は、ここから下をコピーして増やせます -->
+    <!-- 画像を選ぶ・保存するエリア -->
+    <div class="upload-area">
+        <input type="file" id="imageInput" accept="image/*"><br>
+        <button onclick="saveImage()">画像を保存する</button>
     </div>
 
+    <!-- 保存された画像が表示されるエリア -->
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        // ページが開いた時に、すでに保存されている画像を読み込む
+        window.onload = function() {
+            displayImages();
+        };
+
+        // 画像をブラウザに保存する関数
+        function saveImage() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('画像を選択してください！');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result; // 画像を文字データに変換
+
+                // すでに保存されている配列を取得、なければ空の配列を作る
+                let images = JSON.parse(localStorage.getItem('myImages')) || [];
+                
+                // 新しい画像を配列に追加
+                images.push(base64Image);
+
+                try {
+                    // ブラウザのストレージに保存
+                    localStorage.setItem('myImages', JSON.stringify(images));
+                    fileInput.value = ''; // 入力をリセット
+                    displayImages(); // ギャラリーを再表示
+                } catch (error) {
+                    alert('容量がいっぱいです。これ以上保存できません（ブラウザの制限：約5MBまで）');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 保存された画像を画面に表示する関数
+        function displayImages() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = ''; // 一度きれいににする
+
+            let images = JSON.parse(localStorage.getItem('myImages')) || [];
+
+            images.forEach((imgSrc, index) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                
+                item.innerHTML = `
+                    <img src="${imgSrc}">
+                    <button class="delete-btn" onclick="deleteImage(${index})">削除</button>
+                `;
+                
+                gallery.appendChild(item);
+            });
+        }
+
+        // 画像を削除する関数
+        function deleteImage(index) {
+            let images = JSON.parse(localStorage.getItem('myImages')) || [];
+            images.splice(index, 1); // 指定した画像を配列から消す
+            localStorage.setItem('myImages', JSON.stringify(images));
+            displayImages(); // 再表示
+        }
+    </script>
 </body>
 </html>
